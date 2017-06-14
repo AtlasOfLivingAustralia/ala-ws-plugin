@@ -1,5 +1,5 @@
 # ala-ws-plugin
-Grails plugin containing common REST and general webservice functionality
+Grails plugin containing common REST and general webservice functionality. 1.5.x branch which support grails 2.3.x
 
 # Status
 [![Build Status](https://travis-ci.org/AtlasOfLivingAustralia/ala-ws-plugin.svg?branch=master)](https://travis-ci.org/AtlasOfLivingAustralia/ala-ws-plugin)
