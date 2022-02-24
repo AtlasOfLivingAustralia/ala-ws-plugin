@@ -2,6 +2,7 @@ package au.org.ala.ws.service
 
 import au.org.ala.web.AuthService
 import au.org.ala.web.UserDetails
+import com.google.common.net.HttpHeaders
 import grails.converters.JSON
 import groovyx.net.http.ContentType as GContentType
 import groovyx.net.http.HTTPBuilder
@@ -372,6 +373,11 @@ class WebService {
             user = authService.userDetails()
         }
 
+        def userAgent = getUserAgent()
+        if (userAgent) {
+            headers.put(HttpHeaders.USER_AGENT, userAgent)
+        }
+
         includeAuthTokensInternal(includeUser, includeApiKey, user) { key, value ->
             headers.put(key, value)
         }
@@ -414,6 +420,10 @@ class WebService {
 
         conn.setConnectTimeout((grailsApplication.config.webservice?.connect?.timeout ?: DEFAULT_TIMEOUT_MILLIS) as int)
         conn.setReadTimeout((grailsApplication.config.webservice?.read?.timeout ?: DEFAULT_TIMEOUT_MILLIS) as int)
+        def userAgent = getUserAgent()
+        if (userAgent) {
+            conn.setRequestProperty(HttpHeaders.USER_AGENT, userAgent)
+        }
         def user = authService.userDetails()
 
         includeAuthTokens(includeUser, includeApiKey, user, conn)
@@ -452,6 +462,16 @@ class WebService {
         String apiKey = getApiKey()
         if (apiKey && includeApiKey) {
             headerSetter("apiKey", apiKey)
+        }
+    }
+
+    private String getUserAgent() {
+        def name = grailsApplication.config.getProperty('info.app.name', String)
+        def version = grailsApplication.config.getProperty('info.app.version', String)
+        if (name && version) {
+            return "$name/$version"
+        } else {
+            return ''
         }
     }
 
