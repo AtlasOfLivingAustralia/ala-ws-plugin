@@ -448,7 +448,9 @@ class WebService {
     void includeAuthTokensJwt(includeUser, includeApiKey, user, headerSetter) {
         if ((user && includeUser) || (apiKey && includeApiKey)) {
             def token = jwtTokenService.getAuthToken(false) // TODO use includeUser here?
-            headerSetter(AUTHORIZATION, token.toAuthorizationHeader())
+            if (token) {
+                headerSetter(AUTHORIZATION, token.toAuthorizationHeader())
+            }
         }
     }
 
