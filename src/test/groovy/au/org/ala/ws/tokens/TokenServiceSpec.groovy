@@ -48,7 +48,7 @@ class TokenServiceSpec extends Specification {
         }
         def sessionStore = JEESessionStore.INSTANCE
         tokenClient = Mock(TokenClient)
-        tokenService = new TokenService(config, oidcConfiguration, pac4jContextProvider, sessionStore, tokenClient, 'openid profile', 'openid ala:internal users:read')
+        tokenService = new TokenService(config, oidcConfiguration, pac4jContextProvider, sessionStore, tokenClient, 'openid profile', 'openid ala:internal users:read', false)
     }
 
 
