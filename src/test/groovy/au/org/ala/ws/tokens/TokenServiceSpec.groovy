@@ -3,6 +3,7 @@ package au.org.ala.ws.tokens
 import au.org.ala.web.Pac4jContextProvider
 import com.nimbusds.oauth2.sdk.id.Issuer
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken
+import com.nimbusds.oauth2.sdk.token.RefreshToken
 import com.nimbusds.openid.connect.sdk.SubjectType
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata
 import org.pac4j.core.config.Config
@@ -25,6 +26,8 @@ class TokenServiceSpec extends Specification {
 
     def config
     def oidcConfiguration
+    def pac4jContextProvider
+    def sessionStore
     HttpServletRequest request
     TokenClient tokenClient
     TokenService tokenService
@@ -40,13 +43,13 @@ class TokenServiceSpec extends Specification {
         request = new MockHttpServletRequest()
         request.getSession(true)
         def response = new MockHttpServletResponse()
-        def pac4jContextProvider = new Pac4jContextProvider() {
+        pac4jContextProvider = new Pac4jContextProvider() {
             @Override
             WebContext webContext() {
                 JEEContextFactory.INSTANCE.newContext(request, response)
             }
         }
-        def sessionStore = JEESessionStore.INSTANCE
+        sessionStore = JEESessionStore.INSTANCE
         tokenClient = Mock(TokenClient)
         tokenService = new TokenService(config, oidcConfiguration, pac4jContextProvider, sessionStore, tokenClient, 'openid profile', 'openid ala:internal users:read', false)
     }
@@ -74,5 +77,30 @@ class TokenServiceSpec extends Specification {
         then:
         0 * tokenClient.executeTokenRequest(_)
         token != null
+    }
+
+    def 'test token service requireUser false with cache'() {
+        setup:
+        def tokenService = new TokenService(config, oidcConfiguration, pac4jContextProvider, sessionStore, tokenClient,
+                'openid profile', 'openid ala:internal users:read', true)
+
+        def oidcCredentials = new OidcCredentials().tap {
+            it.accessToken = new BearerAccessToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', 10l, null)
+            it.refreshToken = new RefreshToken("asdfasdfasdfasdf")
+        }
+
+        tokenService.cachedCredentials = null
+        when:
+        def token1
+        def token2
+        synchronized (tokenService.lock) {
+            token1 = tokenService.getAuthToken(false)
+            token2 = tokenService.getAuthToken(false)
+        }
+        then: "cached token returned for second call"
+        1 * tokenClient.executeTokenRequest(_) >> oidcCredentials
+        token1 == token2
+
+
     }
 }

@@ -1,6 +1,7 @@
 package au.org.ala.ws.tokens
 
 import au.org.ala.web.Pac4jContextProvider
+import com.google.common.annotations.VisibleForTesting
 import com.nimbusds.oauth2.sdk.ClientCredentialsGrant
 import com.nimbusds.oauth2.sdk.RefreshTokenGrant
 import com.nimbusds.oauth2.sdk.Scope
@@ -90,19 +91,22 @@ class TokenService {
 
     private long expiryWindow = 1 // 1 second
     private volatile transient OidcCredentials cachedCredentials
-    private final Object lock = new Object()
+    private volatile transient long cachedCredentialsLifetime = 0
+    @VisibleForTesting
+    final Object lock = new Object()
 
     private OidcCredentials getOrRefreshToken() {
 
-        long lifetime = cachedCredentials?.accessToken?.lifetime ?: 0
         long now = System.currentTimeSeconds() - expiryWindow
 
-        if (lifetime == 0 || lifetime >= now) {
+        def lifetime = cachedCredentialsLifetime
+        if (lifetime == 0 || now >= lifetime) {
             synchronized (lock) {
-                lifetime = cachedCredentials?.accessToken?.lifetime ?: 0
-                if (lifetime == 0 || lifetime >= now) {
+                lifetime = cachedCredentialsLifetime
+                if (lifetime == 0 || now >= lifetime) {
                     def credentials = tokenSupplier(cachedCredentials)
                     cachedCredentials = credentials
+                    cachedCredentialsLifetime = System.currentTimeSeconds() + credentials.accessToken.lifetime
                     return credentials
                 }
             }
@@ -120,7 +124,7 @@ class TokenService {
                 log.warn("Couldn't get refresh token from {}", existingCredentials.refreshToken, e)
             }
         }
-        if (!credentials) {
+        if (!credentials) { // no refresh token or refresh token grant failed
             log.debug("Requesting new client credentials token")
             credentials = clientCredentialsToken()
         }
