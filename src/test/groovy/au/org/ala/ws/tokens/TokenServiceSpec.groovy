@@ -85,11 +85,16 @@ class TokenServiceSpec extends Specification {
                 'openid profile', 'openid ala:internal users:read', true)
 
         def oidcCredentials = new OidcCredentials().tap {
-            it.accessToken = new BearerAccessToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', 10l, null)
+            it.accessToken = new BearerAccessToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', 2l, null)
             it.refreshToken = new RefreshToken("asdfasdfasdfasdf")
         }
 
-        tokenService.cachedCredentials = null
+        def oidcCredentials2 = new OidcCredentials().tap {
+            it.accessToken = new BearerAccessToken('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNjc2MjM5MDIyfQ.wF1li4R8Gu0h54T_DwxfKGRAtvR1MV43wdpuc2o17Lo', 2l, null)
+            it.refreshToken = new RefreshToken("qwerqwerqwer")
+        }
+
+//        tokenService.cachedCredentials = null
         when:
         def token1
         def token2
@@ -101,6 +106,14 @@ class TokenServiceSpec extends Specification {
         1 * tokenClient.executeTokenRequest(_) >> oidcCredentials
         token1 == token2
 
+        when:
+
+        sleep(3000)
+        def token3 = tokenService.getAuthToken(false)
+
+        then: "refresh token grant used"
+        1 * tokenClient.executeTokenRequest(_) >> oidcCredentials2
+        token1 != token3
 
     }
 }
