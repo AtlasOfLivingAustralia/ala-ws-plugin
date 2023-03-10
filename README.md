@@ -1,3 +1,5 @@
+# THIS REPO IS NOW ARCHIVED.  THE ACTIVE PLUGIN DEVELOPMENT HAPPENS IN [ala-security-project](https://github.com/AtlasOfLivingAustralia/ala-security-project)
+
 # ala-ws-plugin
 Grails plugin containing common REST and general webservice functionality
 
